@@ -3,16 +3,15 @@ import java.util.Map;
 
 public class Bank  {
     private BankInterface bankInterface;
-    public Bank(BankInterface bankInterface) {
-        this.bankInterface = bankInterface;
-    }
+
+    private Map<String, User> users = new HashMap<>();
 
     public User getUserById(String id) {
-        return bankInterface.getUserById(id);
+        return users.get(id);
     }
 
     public boolean isCardLocked(String userId) {
-        User user = bankInterface.getUserById(userId);
+        User user = users.get(userId);
         return user != null && user.isLocked();
     }
 

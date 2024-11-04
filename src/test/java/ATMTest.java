@@ -14,8 +14,7 @@ class ATMTest {
     @BeforeEach
     void setUp() {
         user = new User("1","1337",5000);
-        bankInterface = mock(BankInterface.class);
-        bank = new Bank(bankInterface);
+        bank = mock(Bank.class);
         atm = new ATM(bank,user);
 
     }
