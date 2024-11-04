@@ -11,17 +11,25 @@ public class ATM {
         if (userId == null || userId.trim().isEmpty()) {
             throw new UnsupportedOperationException("Please Insert card");
         }
-        return currentUser.getId().equals(userId);
+        if (bank.isCardLocked(userId)) {
+            System.out.println("Card is locked");
+            return false;
+        }
+        return bank.validateUserId(userId);
     }
 
     public boolean enterPin(String pin) {
         if (pin == null || pin.trim().isEmpty()) {
             throw new UnsupportedOperationException("Please Enter PIN");
         }
-        if (!currentUser.getPin().equals(pin)) {
+        if (!bank.validatePin(pin)) {
             currentUser.incrementFailedAttempts();
-            int amountFailedTries = currentUser.getFailedAttempts();
-            System.out.println("Wrong PIN");
+            int amountFailedTries = bank.amountOfFailedTries(currentUser.getId());
+            int triesLeft = 3 - amountFailedTries;
+            System.out.println("Wrong PIN, you have " + triesLeft + " tries left");
+            if (amountFailedTries == 3){
+                System.out.println("oh no, locked card :(");
+            }
             return false;
         }
         return true;
