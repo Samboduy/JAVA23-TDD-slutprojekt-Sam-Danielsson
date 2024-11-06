@@ -6,7 +6,7 @@ public class ATM {
         this.bank = bank;
         this.currentUser = currentUser;
     }
-
+    //Inserts the card and checks if it is locked
     public boolean insertCard(String userId) {
         if (userId == null || userId.trim().isEmpty()) {
             throw new UnsupportedOperationException("Please Insert card");
@@ -22,7 +22,7 @@ public class ATM {
             return false;
         }
     }
-
+        //verifies pin, locks card if to many failed attempts and saves the user
     public boolean enterPin(String pin) {
         if (pin == null || pin.trim().isEmpty()) {
             throw new UnsupportedOperationException("Please Enter PIN");
@@ -48,13 +48,13 @@ public class ATM {
         }
         return true;
     }
-
+    //shows the balance
     public double checkBalance() {
         double balance = bank.checkBalance(currentUser.getId());
         System.out.println("current balance: " + balance);
         return balance;
     }
-
+    //deposites money to the users account
     public void deposit(double amount) {
         if (amount<0) {
             throw new UnsupportedOperationException("Amount cannot be negative");
@@ -70,7 +70,7 @@ public class ATM {
            }
         }
     }
-
+    //Withdraws money from the users account
     public boolean withdraw(double amount) {
         if (amount<0) {
             throw new UnsupportedOperationException("Amount cannot be negative");
@@ -95,6 +95,7 @@ public class ATM {
             return false;
         }
     }
+    //makes sure the atm is connected to the right bank
     public boolean identifyBank(){
         String bank = Bank.getBankName().trim();
         if (bank.isEmpty()){
