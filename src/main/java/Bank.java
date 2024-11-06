@@ -1,8 +1,7 @@
 import java.util.HashMap;
 import java.util.Map;
 
-public class Bank  {
-    private BankInterface bankInterface;
+public class Bank  implements BankInterface{
 
     private Map<String, User> users = new HashMap<>();
 
@@ -20,9 +19,8 @@ public class Bank  {
     public int amountOfFailedTries(String userId) {
         return 0;
     }
-
-    public void saveUser(User user) {
-        users.put(user.getId(), user);
+    public boolean saveUser(User user) {
+        return false;
     }
 
     public boolean isCardLocked(String userId) {
@@ -32,5 +30,17 @@ public class Bank  {
 
     public static String getBankName() {
         return "MockBank";
+    }
+
+    public double checkBalance(String id) {
+        return 0;
+    }
+
+    public boolean deposite(double amount) {
+        return false;
+    }
+
+    public boolean withdraw(double amount) {
+        return false;
     }
 }

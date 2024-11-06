@@ -1,6 +1,8 @@
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -15,6 +17,7 @@ class ATMTest {
         user = new User("1","1337",5000);
         mockedBank = mock(Bank.class);
         atm = new ATM(mockedBank,user);
+        when(mockedBank.getUserById("1")).thenReturn(user);
 
     }
     @Test
@@ -33,19 +36,21 @@ class ATMTest {
     @Test
     @DisplayName("testing if card is locked")
     public void testIfCardIsLocked() {
-        when(mockedBank.isCardLocked("1")).thenReturn(true);
+        User lockedUser = new User("1","1337",5000);
+        lockedUser.lockCard();
+        when(mockedBank.getUserById("1")).thenReturn(lockedUser);
+        when(mockedBank.validateUserId("1")).thenReturn(true);
         boolean result = atm.insertCard(user.getId());
         assertFalse(result);
-        verify(mockedBank).isCardLocked("1");
+        verify(mockedBank).getUserById(lockedUser.getId());
+
     }
     @Test
     @DisplayName("testing if card is not locked")
     public void testIfCardIsNotLocked() {
-        when(mockedBank.isCardLocked("1")).thenReturn(false);
         when(mockedBank.validateUserId("1")).thenReturn(true);
         boolean result = atm.insertCard(user.getId());
         assertTrue(result);
-        verify(mockedBank).isCardLocked("1");
         verify(mockedBank).validateUserId("1");
     }
     @Test
@@ -73,10 +78,25 @@ class ATMTest {
     @Test
     @DisplayName("Testing input of incorrect pin code")
     public void testInputOfIncorrectPinCode() {
+        user.incrementFailedAttempts();
         when(mockedBank.validatePin("1234")).thenReturn(false);
+        when(mockedBank.saveUser(user)).thenReturn(true);
         boolean result = atm.enterPin("1234");
         assertFalse(result);
         verify(mockedBank).validatePin("1234");
+        verify(mockedBank).saveUser(user);
+    }
+    @Test
+    @DisplayName("Testing input of incorrect pin code 3 times")
+    public void testInputOfIncorrectPinCodeThreeTimes() {
+        user.incrementFailedAttempts();
+        user.incrementFailedAttempts();
+        when(mockedBank.validatePin("1234")).thenReturn(false);
+        when(mockedBank.saveUser(user)).thenReturn(true);
+        boolean result = atm.enterPin("1234");
+        assertFalse(result);
+        verify(mockedBank).validatePin("1234");
+        verify(mockedBank).saveUser(user);
     }
     @Test
     @DisplayName("Testing input of null pin code")
@@ -86,12 +106,103 @@ class ATMTest {
         });
     }
     @Test
-    @DisplayName("Testing input of null pin code")
+    @DisplayName("Testing input of empty pin code")
     public void testInputOfEmptyPinCode() {
         assertThrows(UnsupportedOperationException.class, ()-> {
             atm.enterPin("");
         });
     }
+    @Test
+    @DisplayName("Testing showing, adding and removing money from saldo")
+    public void testShowingAndRemovingMoneyFromSaldo() {
+        when(mockedBank.checkBalance(user.getId())).thenReturn(5000.0);
+        when(mockedBank.deposite(500.0)).thenReturn(true);
+        when(mockedBank.withdraw(500.0)).thenReturn(true);
+
+        assertAll(
+                ()-> assertEquals(5000.0,atm.checkBalance()),
+                ()-> assertTrue(atm.withdraw(500.0))
+        );
+        atm.deposit(500.0);
+
+        verify(mockedBank).checkBalance(user.getId());
+        verify(mockedBank).deposite(500.0);
+        verify(mockedBank).withdraw(500.0);
+    }
+    @Test
+    @DisplayName("Testing internal errors")
+    public void testShowingInternalErrors() {
+
+        when(mockedBank.deposite(500.0)).thenReturn(false);
+        when(mockedBank.withdraw(500.0)).thenReturn(false);
+
+        assertFalse(atm.withdraw(500.0));
+        atm.deposit(500.0);
+
+        verify(mockedBank).deposite(500.0);
+        verify(mockedBank).withdraw(500.0);
+    }
+    @Test
+    @DisplayName("Testing Throwing if amount is less than zero")
+    public void testThrowingIfAmountIsLessThanZero() {
+        assertAll(
+                ()-> assertThrows(UnsupportedOperationException.class, ()-> {
+                   atm.deposit(-500.0);
+                }),
+                ()-> assertThrows(UnsupportedOperationException.class, ()-> {
+                    atm.withdraw(-500.0);
+                })
+        );
+
+    }
+    @Test
+    @DisplayName("Testing Throwing if withdrawing zero")
+    public void testThrowingIfwithdrawingZero() {
+        assertThrows(UnsupportedOperationException.class, ()-> {
+            atm.withdraw(0);
+        });
+    }
+    @Test
+    @DisplayName("Testing withdrawing more then what is in saldo")
+    public void testWithdrawingTooMuch() {
+            assertFalse(atm.withdraw(100000000));
+    }
+    @Test
+    @DisplayName("Testing identifying bank")
+    public void testIdentifyingBank() {
+        try (MockedStatic<Bank> staticBank = Mockito.mockStatic(Bank.class)) {
+            staticBank.when(Bank::getBankName).thenReturn("swedbank");
+            assertTrue(atm.identifyBank());
+
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+        }
+    }
+    @Test
+    @DisplayName("Testing identifying Norwegian bank")
+    public void testIdentifyingNorwegianBank() {
+        try (MockedStatic<Bank> staticBank = Mockito.mockStatic(Bank.class)) {
+            staticBank.when(Bank::getBankName).thenReturn("bank norwegian");
+            assertFalse(atm.identifyBank());
+
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+        }
+    }
+    @Test
+    @DisplayName("Testing identifying empty String")
+    public void testIdentifyingEmptyString() {
+        try (MockedStatic<Bank> staticBank = Mockito.mockStatic(Bank.class)) {
+            staticBank.when(Bank::getBankName).thenReturn("");
+            assertThrows(UnsupportedOperationException.class, ()-> {
+                atm.identifyBank();
+            });
+
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+        }
+    }
+
 
 
 }
